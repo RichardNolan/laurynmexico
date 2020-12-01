@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.1.3/pixi.min.js"></script>
+  </head>
+  <body>
+    <script>
+      const app = new PIXI.Application({ backgroundColor: 0xffffff });
+      document.body.appendChild(app.view);
+
+      // load the texture we need
+      //   app.loader.add("skull", "skull.png").load((loader, resources) => {
+      //     // This creates a texture from a 'skull.png' image
+      //     const skull = new PIXI.Sprite(resources.skull.texture);
+      //     // Setup the position of the skull
+      //     skull.x = app.renderer.width / 2;
+      //     skull.y = app.renderer.height / 2;
+
+      //     // Rotate around the center
+      //     skull.anchor.x = 0.5;
+      //     skull.anchor.y = 0.5;
+
+      //     console.log(skull);
+      //     // Add the skull to the scene we are building
+      //     app.stage.addChild(skull);
+
+      //     // Listen for frame updates
+      //     app.ticker.add(() => {
+      //       // each frame we spin the skull around a bit
+      //       skull.rotation += 0.01;
+      //     });
+      //   });
+
+      // Scale mode for all textures, will retain pixelation
+      PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+
+      const sprite = PIXI.Sprite.from("./skull.png");
+
+      // Set the initial position
+      sprite.anchor.set(0.5);
+      sprite.x = app.screen.width / 2;
+      sprite.y = app.screen.height / 2;
+
+      // Opt-in to interactivity
+      sprite.interactive = true;
+
+      // Shows hand cursor
+      sprite.buttonMode = true;
+
+      // Pointers normalize touch and mouse
+      sprite.on("pointerdown", onClick);
+
+      // Alternatively, use the mouse & touch events:
+      // sprite.on('click', onClick); // mouse-only
+      // sprite.on('tap', onClick); // touch-only
+
+      app.stage.addChild(sprite);
+
+      function onClick() {
+        sprite.scale.x *= 1.25;
+        sprite.scale.y *= 1.25;
+      }
+    </script>
+  </body>
+</html>
