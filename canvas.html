@@ -11,12 +11,46 @@
     <script>
       var canvas = document.getElementById("myCanvas");
       var ctx = canvas.getContext("2d");
+      canvas.style.cursor=;
 
+      let chosenColor = [255, 0, 0];
       var img = new Image();
       img.src = "./skull.png";
       img.onload = function () {
         ctx.drawImage(img, 0, 0, 400, 527);
-        img.style.display = "none";
+
+        ctx.beginPath();
+        ctx.rect(0, 0, 50, 30);
+        ctx.fillStyle = "rgb(255, 0, 0)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(50, 0, 50, 30);
+        ctx.fillStyle = "rgb(0, 255, 0)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(100, 0, 50, 30);
+        ctx.fillStyle = "rgb(0, 0, 255)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(150, 0, 50, 30);
+        ctx.fillStyle = "rgb(255, 0, 255)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(200, 0, 50, 30);
+        ctx.fillStyle = "rgb(0, 255, 255)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(250, 0, 50, 30);
+        ctx.fillStyle = "rgb(255, 255, 0)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(300, 0, 50, 30);
+        ctx.fillStyle = "rgb(255, 125, 0)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.rect(350, 0, 50, 30);
+        ctx.fillStyle = "rgb(0, 125, 125)";
+        ctx.fill();
       };
 
       const compare = (_o, _p, f = 25) => {
@@ -29,74 +63,79 @@
           _p.data[2] <= _o.data[2] + f
         );
       };
-      const color = (p, c = [255, 0, 0, 255]) => {
-        p.data[0] = c[0];
-        p.data[1] = c[1];
-        p.data[2] = c[2];
-        p.data[3] = c[3];
+      const color = (p) => {
+        p.data[0] = chosenColor[0];
+        p.data[1] = chosenColor[1];
+        p.data[2] = chosenColor[2];
       };
       function pick(event) {
         var clickX = event.layerX;
         var clickY = event.layerY;
         var originalPixel = ctx.getImageData(clickX, clickY, 1, 1);
+
         console.log(clickX, clickY);
         console.log("originalPixel", originalPixel);
+        if (clickY <= 30) {
+          chosenColor[0] = originalPixel.data[0];
+          chosenColor[1] = originalPixel.data[1];
+          chosenColor[2] = originalPixel.data[2];
+        } else {
+          for (let x = clickX - 1; x > 0; x--) {
+            const pixel = ctx.getImageData(x, clickY, 1, 1);
 
-        for (let x = clickX - 1; x > 0; x--) {
-          const pixel = ctx.getImageData(x, clickY, 1, 1);
+            if (compare(originalPixel, pixel)) {
+              color(pixel);
+              ctx.putImageData(pixel, x, clickY);
 
-          if (compare(originalPixel, pixel)) {
-            color(pixel);
-            ctx.putImageData(pixel, x, clickY);
-
-            for (let y = clickY - 1; y > 0; y--) {
-              const pixel = ctx.getImageData(x, y, 1, 1);
-              if (compare(originalPixel, pixel)) {
-                color(pixel);
-                ctx.putImageData(pixel, x, y);
-              } else {
-                y = 0;
+              for (let y = clickY - 1; y > 35; y--) {
+                const pixel = ctx.getImageData(x, y, 1, 1);
+                if (compare(originalPixel, pixel)) {
+                  color(pixel);
+                  ctx.putImageData(pixel, x, y);
+                } else {
+                  y = 0;
+                }
               }
-            }
-            for (let y = clickY + 1; y < 600; y++) {
-              const pixel = ctx.getImageData(x, y, 1, 1);
-              if (compare(originalPixel, pixel)) {
-                color(pixel);
-                ctx.putImageData(pixel, x, y);
-              } else {
-                y = 600;
+              for (let y = clickY + 1; y < 600; y++) {
+                const pixel = ctx.getImageData(x, y, 1, 1);
+                if (compare(originalPixel, pixel)) {
+                  color(pixel);
+                  ctx.putImageData(pixel, x, y);
+                } else {
+                  y = 600;
+                }
               }
+            } else {
+              x = 0;
             }
-          } else {
-            x = 0;
           }
-        }
-        for (let x = clickX; x < 400; x++) {
-          const pixel = ctx.getImageData(x, clickY, 1, 1);
-          if (compare(originalPixel, pixel)) {
-            color(pixel);
-            ctx.putImageData(pixel, x, clickY);
+          for (let x = clickX; x < 400; x++) {
+            const pixel = ctx.getImageData(x, clickY, 1, 1);
+            if (compare(originalPixel, pixel)) {
+              color(pixel);
+              ctx.putImageData(pixel, x, clickY);
 
-            for (let y = clickY - 1; y > 0; y--) {
-              const pixel = ctx.getImageData(x, y, 1, 1);
-              if (compare(originalPixel, pixel)) {
-                color(pixel);
-                ctx.putImageData(pixel, x, y);
-              } else {
-                y = 0;
+              for (let y = clickY - 1; y > 0; y--) {
+                const pixel = ctx.getImageData(x, y, 1, 1);
+                if (compare(originalPixel, pixel)) {
+                  color(pixel);
+                  ctx.putImageData(pixel, x, y);
+                } else {
+                  y = 0;
+                }
               }
-            }
-            for (let y = clickY + 1; y < 600; y++) {
-              const pixel = ctx.getImageData(x, y, 1, 1);
-              if (compare(originalPixel, pixel)) {
-                color(pixel);
-                ctx.putImageData(pixel, x, y);
-              } else {
-                y = 600;
+              for (let y = clickY + 1; y < 600; y++) {
+                const pixel = ctx.getImageData(x, y, 1, 1);
+                if (compare(originalPixel, pixel)) {
+                  color(pixel);
+                  ctx.putImageData(pixel, x, y);
+                } else {
+                  y = 600;
+                }
               }
+            } else {
+              x = 400;
             }
-          } else {
-            x = 400;
           }
         }
       }
