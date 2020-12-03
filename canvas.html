@@ -4,10 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <style>
+      button {
+        width: 195px;
+        background-color: coral;
+        color: cornsilk;
+        font-size: 24pt;
+      }
+    </style>
   </head>
   <body>
+    <a id="save" href="" download="myImage.png"></a>
     <canvas id="myCanvas" width="400" height="527" style="border: 1px solid black"></canvas>
-    <div style="width: 300px; height: 300" id="selected-color"></div>
+    <div style="width: 400px">
+      <button onclick="reset()">Reset</button>
+      <button onclick="save()">Save</button>
+    </div>
+
     <script>
       var canvas = document.getElementById("myCanvas");
       var ctx = canvas.getContext("2d");
@@ -15,7 +28,8 @@
       let chosenColor = [255, 0, 0];
       var img = new Image();
       img.src = "./skull.png";
-      img.onload = function () {
+      img.onload = reset;
+      function reset() {
         ctx.drawImage(img, 0, 0, 400, 527);
 
         ctx.beginPath();
@@ -50,94 +64,132 @@
         ctx.rect(350, 0, 50, 30);
         ctx.fillStyle = "rgb(0, 125, 125)";
         ctx.fill();
+      }
+      const save = () => {
+        var img = canvas.toDataURL("image/png"); //.replace("image/png", "image/octet-stream");
+        document.getElementById("save").href = img;
+        document.getElementById("save").click();
       };
-
-      const compare = (_o, _p, f = 25) => {
+      const compare = (_o, _p, f = 50) => {
         return (
           _p.data[0] >= _o.data[0] - f &&
           _p.data[0] <= _o.data[0] + f &&
-          _p.data[1] === _o.data[1] &&
+          _p.data[1] >= _o.data[1] - f &&
           _p.data[1] <= _o.data[1] + f &&
-          _p.data[2] === _o.data[2] &&
+          _p.data[2] >= _o.data[2] - f &&
           _p.data[2] <= _o.data[2] + f
         );
       };
+      const isGrey = (p) => p.data[0] === p.data[1] && p.data[0] === p.data[2];
+      const isDark = (p) => isGrey(p) && p.data[0] < 100;
       const color = (p) => {
-        p.data[0] = chosenColor[0];
-        p.data[1] = chosenColor[1];
-        p.data[2] = chosenColor[2];
+        const grey = isGrey(p);
+        const fix = grey ? 255 - p.data[0] : 0;
+        p.data[0] = chosenColor[0] + fix;
+        p.data[1] = chosenColor[1] + fix;
+        p.data[2] = chosenColor[2] + fix;
       };
+      const sameColor = (p) => {
+        return p.data[0] === chosenColor[0] && p.data[1] === chosenColor[1] && p.data[2] === chosenColor[2];
+      };
+
       function pick(event) {
         var clickX = event.layerX;
         var clickY = event.layerY;
         var originalPixel = ctx.getImageData(clickX, clickY, 1, 1);
+        var originalColor = { ...originalPixel };
 
-        console.log(clickX, clickY);
-        console.log("originalPixel", originalPixel);
         if (clickY <= 30) {
-          chosenColor[0] = originalPixel.data[0];
-          chosenColor[1] = originalPixel.data[1];
-          chosenColor[2] = originalPixel.data[2];
+          chosenColor[0] = originalColor.data[0];
+          chosenColor[1] = originalColor.data[1];
+          chosenColor[2] = originalColor.data[2];
         } else {
-          const t = (x, y) => {};
+          const t = (x, y) => {
+            var p1 = ctx.getImageData(x, y, 1, 1);
+            if (isDark(p1)) return;
+            color(p1);
+            ctx.putImageData(p1, x, y);
+            var arr = [
+              [x, y - 1],
+              [x - 1, y],
+              [x + 1, y],
+              [x, y + 1],
+            ];
 
-          for (let x = clickX - 1; x > 0; x--) {
-            const pixel = ctx.getImageData(x, clickY, 1, 1);
+            arr.forEach((c) => {
+              var p2 = ctx.getImageData(c[0], c[1], 1, 1);
 
-            if (compare(originalPixel, pixel)) {
-              color(pixel);
-              ctx.putImageData(pixel, x, clickY);
+              if (sameColor(p2)) return;
+              if (!compare(originalColor, p2)) return;
 
-              for (let y = clickY - 1; y > 35; y--) {
-                const pixel = ctx.getImageData(x, y, 1, 1);
-                if (compare(originalPixel, pixel)) {
-                  color(pixel);
-                  ctx.putImageData(pixel, x, y);
-                } else {
-                  y = 0;
-                }
-              }
-              for (let y = clickY + 1; y < 600; y++) {
-                const pixel = ctx.getImageData(x, y, 1, 1);
-                if (compare(originalPixel, pixel)) {
-                  color(pixel);
-                  ctx.putImageData(pixel, x, y);
-                } else {
-                  y = 600;
-                }
-              }
-            } else {
-              x = 0;
-            }
+              color(p2);
+              ctx.putImageData(p2, c[0], c[1]);
+              t(c[0], c[1]);
+            });
+          };
+          try {
+            t(clickX, clickY);
+          } catch (err) {
+            // console.log(err);
           }
-          for (let x = clickX; x < 400; x++) {
-            const pixel = ctx.getImageData(x, clickY, 1, 1);
-            if (compare(originalPixel, pixel)) {
-              color(pixel);
-              ctx.putImageData(pixel, x, clickY);
 
-              for (let y = clickY - 1; y > 0; y--) {
-                const pixel = ctx.getImageData(x, y, 1, 1);
-                if (compare(originalPixel, pixel)) {
-                  color(pixel);
-                  ctx.putImageData(pixel, x, y);
-                } else {
-                  y = 0;
-                }
-              }
-              for (let y = clickY + 1; y < 600; y++) {
-                const pixel = ctx.getImageData(x, y, 1, 1);
-                if (compare(originalPixel, pixel)) {
-                  color(pixel);
-                  ctx.putImageData(pixel, x, y);
-                } else {
-                  y = 600;
-                }
-              }
-            } else {
-              x = 400;
-            }
-          }
+          //   for (let x = clickX - 1; x > 0; x--) {
+          //     const pixel = ctx.getImageData(x, clickY, 1, 1);
+
+          //     if (compare(originalPixel, pixel)) {
+          //       color(pixel);
+          //       ctx.putImageData(pixel, x, clickY);
+
+          //       for (let y = clickY - 1; y > 35; y--) {
+          //         const pixel = ctx.getImageData(x, y, 1, 1);
+          //         if (compare(originalPixel, pixel)) {
+          //           color(pixel);
+          //           ctx.putImageData(pixel, x, y);
+          //         } else {
+          //           y = 0;
+          //         }
+          //       }
+          //       for (let y = clickY + 1; y < 600; y++) {
+          //         const pixel = ctx.getImageData(x, y, 1, 1);
+          //         if (compare(originalPixel, pixel)) {
+          //           color(pixel);
+          //           ctx.putImageData(pixel, x, y);
+          //         } else {
+          //           y = 600;
+          //         }
+          //       }
+          //     } else {
+          //       x = 0;
+          //     }
+          //   }
+          // for (let x = clickX; x < 400; x++) {
+          //   const pixel = ctx.getImageData(x, clickY, 1, 1);
+          //   if (compare(originalPixel, pixel)) {
+          //     color(pixel);
+          //     ctx.putImageData(pixel, x, clickY);
+
+          //     for (let y = clickY - 1; y > 0; y--) {
+          //       const pixel = ctx.getImageData(x, y, 1, 1);
+          //       if (compare(originalPixel, pixel)) {
+          //         color(pixel);
+          //         ctx.putImageData(pixel, x, y);
+          //       } else {
+          //         y = 0;
+          //       }
+          //     }
+          //     for (let y = clickY + 1; y < 600; y++) {
+          //       const pixel = ctx.getImageData(x, y, 1, 1);
+          //       if (compare(originalPixel, pixel)) {
+          //         color(pixel);
+          //         ctx.putImageData(pixel, x, y);
+          //       } else {
+          //         y = 600;
+          //       }
+          //     }
+          //   } else {
+          //     x = 400;
+          //   }
+          // }
         }
       }
 
